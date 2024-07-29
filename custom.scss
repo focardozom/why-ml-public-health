@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Anaheim&display=swap');
+
+/*-- scss:defaults --*/
+
+// fonts
+$font-family-sans-serif: 'Anaheim', 'Helvetica', 'Arial', sans-serif !default;
+
+// colors
+$body-bg: #F4F7F7; /* Pantone® 7502 C */
+$body-color: #171515; /* Pantone® 3435 */
+$link-color: #246449; /* Pantone® 1665 C */
+$selection-bg: #c2e5f6; /* Lightened Pantone® 291 C */
+
+// headings
+$presentation-heading-font: 'Anaheim' !default;
+$presentation-font-size-root: 30px;
+
+/*-- scss:rules --*/
+
+#title-slide {
+  text-align: left;
+
+  .quarto-title-authors {
+    justify-content: left;
+  
+    .quarto-title-author { // optional, test it for yourself
+      padding-left: 0;
+      padding-right: 0;
+      font-size: 30px;
+      width: 100%;
+    }
+  }
+}
+
+section.slide h2 {
+  width: 200vw;
+  position: relative;
+  left: -20vw;
+  padding-left: 20vw;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 50px;
+}
+
+h1.title {
+  font-weight: normal;
+  font-size: 50px;
+  text-align: left;
+}
+
+.h1 {
+  font-weight: normal;
+  font-size: 20px;
+  text-align: left;
+}
+
+.quarto-title-author-name {
+  font-weight: normal;
+  font-size: 30px;
+  text-align: left;
+}
+
+.quarto-title-author-institute {
+  font-weight: normal;
+   font-size: 10px;
+  text-align: left;
+}
+
+.date {
+  text-align: left;
+  font-size: 30px;
+}
+

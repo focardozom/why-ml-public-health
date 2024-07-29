@@ -1,0 +1,424 @@
+---
+title: "Machine Learning for Public Health"
+author: 
+  - "Francisco Cardozo, Ph.D. Student"
+  - "Eric C. Brown, Ph.D."
+institute: 
+  - "Prevention Science and Community Health"
+  - "Prevention Science and Community Health"
+date: today
+date-format: "long"
+format:
+  revealjs: 
+    theme: [default, custom.scss]
+    footer: "Why Machine Learning"
+    slideNumber: true
+editor: visual
+execute:
+  eval: false
+editor_options: 
+  chunk_output_type: console
+bibliography: ["references.bib"]
+filters:
+  - shinylive
+---
+
+## Agenda
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Part I - Machine Learning
+
+- Key Concepts
+- Simulation Examples
+
+:::
+
+::: {.column width="50%"}
+
+### Part II - Generative AI
+
+- Key Concepts
+- Tools
+- Future Directions
+- Ethical Dilemmas
+
+:::
+
+::::
+
+# Part I - Machine Learning
+
+## What is Public Health?
+
+::: {.r-fit-text}
+> "Public health is the art and science of preventing disease, prolonging life, and promoting health through the organized efforts of society" - [@Winslow_1920]
+
+> "Public health is primarily concerned with the health of the entire population, rather than the health of individuals. Its features include an emphasis on the promotion of health and the prevention of disease and disability; the collection and use of epidemiological data, population surveillance, and other forms of empirical quantitative assessment; a recognition of the multidimensional nature of the determinants of health; and a focus on the complex interactions of many factors - biological, behavioral, social, and environmental - in developing effective interventions." - [@Childress_2002]
+
+*Scoping review of definitions* [@Azari_2023]
+
+:::
+
+## The Importance of Prediction in Public Health
+
+::: {.r-fit-text}
+
+* What are the underlying causes of a health problem? For example, what are the causes of youth alcohol initiation?
+
+* What are the risk factors associated with a health problem? Which demographic and behavioral factors increase the likelihood of developing type 2 diabetes among adults?
+
+::: {.fragment .highlight-red}
+* Can we predict the future appearance of a health problem? Can we forecast the potential outbreak of seasonal influenza in the upcoming months?
+:::
+
+:::
+
+![](memes/upstream-downstream.png)
+
+## Machine Learning is Good for Prediction
+
+:::: {.columns}
+
+::: {.column width="50%"}
+
+### Traditional Statistics
+
+- Focus on inference rather than prediction
+- Limited flexibility with complex, non-linear relationships
+- Emphasis on hypothesis testing and confidence intervals
+- Designed for smaller data sets
+
+:::
+
+::: {.column width="50%"}
+
+### Machine Learning
+
+- Prioritizes predictive accuracy over interpretability
+- Handles complex, non-linear relationships
+- Uses performance metrics (e.g., accuracy, AUC, F1 score)
+- Specialized techniques for unstructured data (e.g., NLP, CNNs)
+
+:::
+::::
+
+## Machine Learning: The Best Tool for Prediction
+
+I suggest these three concepts are at the heart of effective prediction:
+
+- Testing error
+- Regularization
+- Bias-variance trade-off
+
+Bonus: Machine learning is optimized for prediction.
+
+# Understanding Machine Learning Advantages
+
+## Testing Error
+
+- Measures the performance of a model on unseen data.
+- Helps to evaluate the generalization ability of a model.
+- The estimation of this error is key to optimizing model performance.
+
+## Regularization
+
+- Technique to prevent overfitting.
+- Controls the complexity of the model.
+- Adds some bias to the model to reduce variance.
+
+![](memes/regularization.png)
+
+## Live Example
+
+```{shinylive-r}
+#| standalone: true
+#| viewerHeight: 500
+library(shiny)
+library(glmnet)
+
+# Define UI for application
+ui <- fluidPage(
+    titlePanel("Effect of L1 Penalty (Lasso) on Regression Slope"),
+    sidebarLayout(
+        sidebarPanel(
+            sliderInput("penalty",
+                        "Penalty (Lambda):",
+                        min = 0,
+                        max = 1,
+                        value = 0.1,
+                        step = 0.01)
+        ),
+        mainPanel(
+           plotOutput("regressionPlot"),
+           verbatimTextOutput("modelSummary")
+        )
+    )
+)
+
+# Define server logic
+server <- function(input, output) {
+    
+    output$regressionPlot <- renderPlot({
+        # Generate synthetic data
+        set.seed(123)
+        x <- matrix(rnorm(200), ncol = 2)
+        y <- 3 * x[,1] + 2 * x[,2] + rnorm(100)
+        
+        # Fit model with Lasso penalty (alpha = 1) using both columns of x
+        fit <- glmnet(x, y, alpha = 1, lambda = input$penalty)
+        
+        # Extract coefficients
+        intercept <- coef(fit)[1]
+        slope1 <- coef(fit)[2]
+        slope2 <- coef(fit)[3]
+        
+        # Calculate predicted values using intercept and slopes
+        y_pred <- intercept + x[,1] * slope1 + x[,2] * slope2
+        
+        # Combine data for plotting
+        data <- data.frame(X1 = x[,1], Y = y, Y_Pred = y_pred)
+        
+        # Plot data and regression line
+        par(mfrow = c(1, 2))
+        
+        # Plot 1: Regression line
+        plot(data$X1, data$Y, main = "Lasso Regression Line (X1 vs Y)",
+             xlab = "X1", ylab = "Y", pch = 19, col = "red")
+        abline(intercept, slope1, col = "blue", lwd = 2)
+        
+        # Plot 2: Actual vs Predicted values
+        plot(data$X1, data$Y, main = "Actual vs Predicted (X1 vs Y)",
+             xlab = "X1", ylab = "Y", pch = 19, col = "red")
+        points(data$X1, data$Y_Pred, col = "blue", pch = 19)
+        
+        par(mfrow = c(1, 1))
+    })
+    
+    output$modelSummary <- renderPrint({
+        # Generate synthetic data
+        set.seed(123)
+        x <- matrix(rnorm(200), ncol = 2)
+        y <- 3 * x[,1] + 2 * x[,2] + rnorm(100)
+        
+        # Fit model with Lasso penalty (alpha = 1)
+        fit <- glmnet(x, y, alpha = 1, lambda = input$penalty)
+        
+        # Display coefficients including intercept
+        intercept <- coef(fit)[1]
+        slope1 <- coef(fit)[2]
+        slope2 <- coef(fit)[3]
+        
+        cat("Intercept:", intercept, "\n")
+        cat("Slope for X1:", slope1, "\n")
+        cat("Slope for X2:", slope2, "\n")
+    })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
+
+```
+
+## Bias-variance Trade-off
+
+Bias: Error due to overly simplistic assumptions.
+Variance: Error due to overly complex models.
+The goal is to minimize the total error.
+
+![](memes/bias-variance.png)
+
+# Examples
+
+## Simulation Example
+
+Let's simulate a data set and apply machine learning techniques to predict the outcome.
+
+- Simulate two data sets:
+  - Linear relationship
+  - Non-linear relationship
+
+- Fit a linear regression model to the linear data set.
+- Fit a linear regression model to the non-linear data set.
+- Fit a support vector machine model to the non-linear data set.
+- Fit a random forest model to the linear data set.
+
+## Simulation Example
+
+Estimate these models in a few cases. Then progressively increase the sample size by one unit. Calculate the training and testing errors each time.
+
+<center>
+![](animations/methods.png){width=60%}
+</center>
+
+## First Scenario
+
+A linear problem - linear regression.
+
+<center>
+::: {.fragment}
+![](animations/linear-linear.gif)
+:::
+</center>
+
+## Second Scenario
+
+Non-linear problem - linear regression.
+
+<center>
+::: {.fragment}
+![](animations/linear-nonlinear.gif)
+:::
+</center>
+
+## Third Scenario
+
+Non-linear problem - Support Vector Machine.
+
+<center>
+::: {.fragment}
+![](animations/svm-nonlinear.gif)
+:::
+</center>
+
+## Fourth Scenario
+
+A linear problem - Random Forest.
+
+<center>
+::: {.fragment}
+![](animations/rforest-linear.gif)
+:::
+</center>
+
+## Machine Learning in Public Health
+
+- Machine learning is a powerful tool for prediction in public health.
+- It prioritizes predictive accuracy over interpretability.
+- It handles complex, non-linear relationships.
+- It is optimized for prediction.
+
+## Key Concepts
+
+- Testing error: Measures the performance of a model on unseen data.
+- Regularization: Technique to prevent overfitting.
+- Bias-variance trade-off: The goal is to minimize the total error.
+
+# Part II - Generative AI
+
+## Transformers 
+
+<center>
+![](images/transformer.svg){width=100%}
+</center>
+
+::: footer
+
+:::
+
+## What is a Transformer?
+
+- Transformers are a type of neural network architecture that has been used to achieve state-of-the-art performance on a wide range of natural language processing tasks.
+- They are based on the self-attention mechanism, which allows the model to focus on different parts of the input sequence when making predictions.
+- Transformers have been used to build large language models that can generate human-like text, translate between languages, and perform other natural language processing tasks.
+
+## Transformers Applications
+
+- Audio transcription, image captioning, text-to-speech, speech-to-text, translation, text generation, sentiment analysis, summarization, question answering, chatbots, virtual assistants, customer service, content creation, content moderation.
+
+## Audio
+
+- [Whisper](https://openai.com/index/whisper/)
+
+![](images/whisper.png)
+
+## Audio
+
+[Audio Tumaco](https://www.youtube.com/watch?v=OJZmHCNbuIg)
+
+![](images/tumaco-large.png)
+
+## Imagen
+
+- [Midjourney](https://www.midjourney.com/home)
+- [recraft.ai](https://www.recraft.ai)
+
+# Text 
+
+## What are Large Language Models?
+
+- Something that knows how to predict the next word in a sentence or fill in the missing words in a sentence.
+- Large language models (LLMs) are a type of artificial intelligence that can generate human-like text.
+- They are trained on vast amounts of text data.
+
+<center>
+![](images/machine-learning.png){width=80%}
+<center>
+
+## What can you do with LLMs?
+
+- Prompt and RAG the models [@L_pez_Espejel_2023]
+![](images/inductive.png)
+
+## Prompt and RAG the models
+
+![](images/deductive.png)
+
+## Prompt and RAG the models
+
+![](images/abductive.png)
+
+## Prompt and RAG the models
+
+[groq](https://groq.com)
+
+[nat.dev](https://nat.dev/)
+
+[h2o](https://gpt.h2o.ai/)
+
+## What can you do with LLMs?
+
+- Fine-tune the models
+  - [Hugging Face Transformers](https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest)
+
+- Create smaller expert models for narrow tasks
+
+# What can you do with LLMs?
+
+- Study, optimize, and debug the models
+- Agents [@agents1; @agents2]
+
+<center>
+![](images/agents.png){width=50%}
+</center>
+
+## Learning from Large Language Models
+
+[Leader Board](https://huggingface.co/spaces/open-llm-leaderboard-old/open_llm_leaderboard)
+
+[Advance Metric](https://fasteval.github.io/FastEval/)
+
+## Future Directions
+
+- Machine learning in public health is getting bigger.
+- More research is needed to understand the potential of machine learning in public health.
+- The integration of machine learning with traditional statistical approaches is promising.
+- We will have agents that can deliver health information, answer questions, and provide support.
+- The future of public health is bright!
+
+# However
+
+## Ethical Dilemmas 
+
+![](images/power-responsability.webp)
+
+- Bias, fairness, security, privacy, transparency, accountability, and trust.
+- The potential for misuse of large language models is a major concern.
+- How people apply moral and ethical principles to the development and use of large language models is a critical issue.
+- How people reason in terms of accountability when interacting with large language models.
+
+# Thank you!
+[Francisco Cardozo](https://focardozom.github.io/)
+
+# References

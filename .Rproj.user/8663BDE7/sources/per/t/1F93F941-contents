@@ -1,0 +1,660 @@
+---
+title: "Evaluating Sample Size Requirements in Machine Learning: Applications in Prevention Science"
+format:
+  docx:
+    toc: true
+    eval: false
+    echo: false
+    number-sections: true
+    reference-doc: template.docx
+bibliography: references.bib
+---
+
+```{r eval= TRUE, message=FALSE, warning=FALSE, include=FALSE} 
+library(here)
+```
+
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(rsample)
+
+source(here("R","functions.R"))
+
+
+```
+
+
+
+# Evaluating Sample Size Requirements in Machine Learning: Applications in Prevention Science
+
+In this document, we discuss the role that sample size has in machine learning modeling. We present the relationship between sample size and the variance-biased trade-off in ML. We also present a simulation study that shows how sample size affects the performance of machine learning models. We conclude with a discussion of the implications of our findings for prevention science. 
+
+## Background
+
+The efficacy of many modeling techniques in machine learning relies significantly on both the quality and quantity of data. Data quality includes factors such as noise, bias, and variance, each contributing uniquely to the model's predictive power. Noise in the data can lead to unpredictable errors, whereas bias may result from unrepresentative or incomplete data samples. Variance, on the other hand, reflects the model's sensitivity to fluctuations in the training dataset [@introtostatlearn2013]. 
+
+Data quantity significantly influences model outcomes in various ways. Small sample sizes often lead to overfitting, where the model excessively adapts to the limited training data, thereby reducing its reliability and generalizability. On the other hand, large samples can sometimes result in underfitting, especially when a model is too simplistic to capture the complexity within a vast dataset. As such, managing the trade-off between overfitting and underfitting in machine learning is crucial, and sample size plays a pivotal role in striking the right balance between these two extremes in both large and small data scenarios [@Rajput2023].
+
+Larger datasets can mitigate both underfitting and overfitting issues [@Halevy2009]. However, excessively large samples can lead to computational inefficiency, a particularly pressing issue in areas where data are scarce or expensive to collect, such as in preventive interventions. In these scenarios, participants of preventive interventions are limited to a few questions to optimize intervention time, or data collection procedures are highly expensive, or focus on special cases with low prevalence in the population.
+
+Therefore, the challenge lies in determining the optimal sample size that balances these considerations: large enough to avoid the pitfalls of small datasets but not so large as to be computationally prohibitive or not suitable in real-world scenarios. This balance is crucial in prevention science, where the requirement for model accuracy is high, and data may not always be abundantly available.
+
+In this study, we focus on the role of data quantity. We explore how different sample sizes influence the trade-off between bias and variance in ML models using three different simulated datasets, and discuss the implications of these findings for predictive modeling in prevention science.
+
+
+### Purpose of the Study
+
+This study aims to investigate the relationship between sample size and the performance of machine learning models under different type of data structures. We seek to understand how the size of the training dataset affects the ability of machine learning models to capture the data structure. 
+
+## Method
+
+We adopted a simulation-based approach, generating three distinct simulated datasets, each characterized by a specific data structure.
+
+### Simulated datasets
+
+**Linear relation Dataset:** The first dataset simulates a scenario where the relationship between the predictors and the outcome is linear. The dataset consists of 400 observations with five predictors (`X1, X2, X3, X4, X5`), generated from a standard normal distribution. The outcome variable (`Y_linear`) is constructed as a linear combination of these predictors with coefficients (`β = [.1, -.2, .3, -.4, .5]`) and an added Gaussian noise. The linear model is represented as:
+
+   `Y_linear = (.1 * X1) + (-.2 * X2) + (.3 * X3) + (-.4 * X4) + (.5 * X5) + ε`
+
+where `ε` denotes the noise term following a normal distribution.
+
+```{r}
+
+set.seed(2023) # for reproducibility
+n <- 500 # sample size
+X <- matrix(rnorm(n * 5), ncol = 5) # 5 predictors
+beta <- c(.3, -.2, .4, -.1, .2) # coefficients
+y_linear <- X %*% beta + rnorm(n) # linear combination of X and beta with some noise
+df_linear  <- cbind(y_linear, X)  |> as_tibble() 
+colnames(df_linear)  <- c("Y", "X1", "X2", "X3", "X4", "X5")
+
+
+```
+
+The next Figure represents the correlation between the predictors and the outcome variable
+
+```{r corr-linear, }
+GGally::ggpairs(df_linear) 
+ggsave(here("R", "img", "corr-linear.png"), 
+       width = 10, height = 10, units = "in",
+        dpi = 300)
+
+```
+
+![](`r here("R","img", "corr-linear.png")`)
+
+**Interaction Structure Dataset:** Recognizing the importance of interaction effects in real-world data, the second dataset incorporates interaction terms between predictors. Alongside the original five predictors, two interaction terms are introduced: the product of `X1` and `X1`, and the product of `X3` and `X3`. The outcome variable (`Y_interaction`) is formulated by extending the linear model to include these interaction terms. This dataset challenges the model's ability to capture non-linear associations. The interaction coefficients are defined as follows:
+
+   `Y_interaction = (.3 * X1) + (-.2 * X2) + (.4 * X3) + (-.1 * X4) + (.2 * X5) + (.6 * X1 * X1) + (.8 * X3 * X3) + ε`
+
+Notice that the interaction terms are more strongly associated with the outcome than the original predictors, which implies that the model's performance will be highly dependent on its ability to capture these interactions.
+
+```{r}
+
+# Add interaction terms
+X_interaction <- cbind(X[,1], X[,2], X[,3], X[,4], X[,5], X[,1] * X[,1], X[,3] * X[,3])
+
+beta_interaction <- c(.3, -.2, .4, -.1, .2, .6, .8)
+
+y_interaction <- X_interaction %*% beta_interaction + rnorm(n)
+
+# Combine into a tibble
+df_interaction <- cbind(y_interaction, X_interaction) |> as_tibble() |> select(-V7, -V8)
+colnames(df_interaction) <- c("Y", "X1", "X2", "X3", "X4", "X5")
+
+```
+
+```{r corr-interaction}
+GGally::ggpairs(df_interaction)
+ggsave(here("R", "img", "corr-interaction.png"), 
+       width = 10, height = 10, units = "in",
+        dpi = 300)
+
+```
+
+Figure 2 represents the correlation between the predictors and the outcome variable
+
+![](`r here("R","img", "corr-interaction.png")`)
+
+**Random Dataset:** To establish a baseline for model performance, the third dataset is generated without any underlying systematic relationship between predictors and outcome. The outcome variable (`Y_random`) is random, following a normal distribution. This dataset serves as a control, enabling the evaluation of model performance in scenarios where the underlying data structure is non-informative.
+
+`Y_random = ε`
+
+```{r}
+
+y_random <- rnorm(n)
+# Combine into a tibble
+df_random <- cbind(y_random, X) %>% as_tibble()
+colnames(df_random) <- c("Y", "X1", "X2", "X3", "X4", "X5")
+
+```
+
+```{r corr-random}
+GGally::ggpairs(df_random)
+ggsave(here("R", "img", "corr-random.png"), 
+       width = 10, height = 10, units = "in",
+        dpi = 300)
+
+```
+
+Figure 3 represents the correlation between the predictors and the outcome variable
+
+![](`r here("R","img", "corr-random.png")`)
+
+### Model Training and Evaluation
+
+Each dataset was divided, allocating 80% for model training and 20% for validation purposes. We initiated the training process with a subset of three data points from the training allocation and incrementally added one additional data point at a time until the entire training allocation was utilized.
+
+For each iteration, models were trained on these incrementally expanding training subsets, differing only by the successive addition of a single data point. After training, we assessed the models' performance using the fixed validation set reserved for this purpose. This procedure was applied to all three simulated datasets.
+
+The following figure represents the workflow used to train and evaluate the models.
+
+![](`r here("R","img", "workflow.png")`)
+
+To facilitate the creation of multiple sets of data, we developed a function named `progressive_split()`. This function takes three arguments: the complete dataset, the proportion of data designated for the validation set, and the size of the initial training subset. The function then progressively increases the size of the training data for subsequent subsets. We have incorporated progressive_split() into an R package named `BreakNBuild.`
+
+The `progressive_split()` function is defined as follows:
+
+---
+
+```{r progressive-split, echo = TRUE}
+
+progressive_split <- function(data, validation_size = 0.2, start_size = 2) {
+  n <- nrow(data)
+
+  if (n < 2) {
+    stop("Data must have at least two rows", call. = FALSE)
+  }
+
+  # Calculate the size of the validation set
+  validation_n <- max(1, floor(n * validation_size))
+  training_max_n <- n - validation_n
+
+  if (start_size < 1 || start_size > training_max_n) {
+    stop("start_size must be at least 1 and less than or equal to the number of rows in the training set", call. = FALSE)
+  }
+
+  if (training_max_n < start_size) {
+    stop("Not enough data for training after allocating validation set", call. = FALSE)
+  }
+
+  # Create an initial 'rset' object with enough splits
+  num_initial_splits <- training_max_n - start_size + 1
+  initial_splits <- rsample::vfold_cv(data, v = num_initial_splits)
+
+  # Define a fixed range for the validation set
+  validation_range <- (n - validation_n + 1):n
+
+  # Modify the splits
+  custom_splits <- lapply(start_size:training_max_n, function(i) {
+    analysis <- 1:i
+    split_idx <- i - start_size + 1
+    out <- initial_splits$splits[[split_idx]]
+    out$in_id <- analysis
+    out$out_id <- validation_range
+    out
+  })
+
+  # Update the 'rset' object
+  initial_splits$splits <- custom_splits
+  initial_splits
+}
+
+```
+
+--- 
+The `progressive_split` functionality can be described as follows:
+
+**Input Validation:** The function first verifies that the input dataset (data) has at least two rows, as splitting requires a minimum of two data points. It also checks the validity of the start_size parameter to ensure it falls within an acceptable range for the training set.
+
+**Validation Set Allocation:** A specified proportion of the dataset, determined by the validation_size parameter, is set aside for validation. The rest of the data is available for training.
+
+**Training Size Adjustment:** The training set size begins at the start_size and is incrementally increased by one observation for each successive split.
+
+**Creation of Cross-Validation Splits:** The function uses `vfold_cv` function from the `rsamples` package to generate a series of cross-validation splits. These splits correspond to various sizes of the training set, starting from the start_size and extending up to the maximum size allowed after reserving the validation set.
+
+**Modification of Custom Splits:** The generated splits are then customized to reflect the gradual increase in the size of the training set, ensuring that the validation set remains constant across all splits.
+
+**Returning the Resultant Splits:** The function returns an object containing all the custom splits, structured for integration with standard cross-validation workflows in R. This structure facilitates the application of various machine learning models.
+
+### Model Specification
+
+We used 4 machine learning models to train and evaluate the simulated datasets. These models were selected to represent a range of complexity, from simple linear models to more complex models with non-linear decision boundaries. The models used in this study are as follows:
+
+### Linear model specification
+
+The linear regression model is a linear model that assumes a linear relationship between the predictors and the outcome. The model is defined as follows:
+
+```{r echo = TRUE}
+
+linear_spec  <- 
+    linear_reg()  |> 
+    set_engine("lm")   |> 
+    set_mode("regression")
+
+```
+
+### Support Vector Machine (SVM) specification
+
+The SVM model is a non-linear model that uses a kernel function to transform the data into a higher-dimensional space, where it can be separated by a hyperplane. We used a degree 2 polynomial kernel as model specification. The model is defined as follows:
+
+```{r echo = TRUE}
+
+svm_spec <-
+    svm_poly(degree=2) %>%
+    set_engine("kernlab") %>%
+    set_mode("regression")
+
+```
+
+### Decision Tree specification
+
+The decision tree model is a non-linear model that uses a tree structure to partition the data into smaller subsets. The model is defined as follows:
+
+```{r echo = TRUE}
+
+tree_spec  <- 
+    decision_tree()  |>  
+    set_engine("rpart")  |> 
+    set_mode("regression")
+
+```
+
+### Random Forest specification
+
+The Random Forest model is an ensemble model that uses multiple decision trees to make predictions. The model is defined as follows:
+
+```{r echo = TRUE}
+
+forest_spec  <- 
+    rand_forest()  |>  
+    set_engine("ranger")  |> 
+    set_mode("regression")
+
+```
+
+### Model Training and Evaluation
+
+We used `tidymodels` package to estimate the models in the different training sets using the `fit_resamples()` function. To estimate the performance of the models, we used the r-squared metric. The r-squared was calculated for each fold (training and validation). The results are plotted to visualize the relationship between training set size and model performance.
+
+# Results
+
+```{r splits-recipes} 
+## Create splits
+
+### Random dataset splits
+
+random_splits  <- progressive_split(df_random, validation_size= 0.2, start_size = 3)
+
+random_recipe <- recipe(Y ~ ., data = df_random)
+
+### Linear dataset splits
+
+linear_splits  <- progressive_split(df_linear, validation_size= 0.2, start_size = 3)
+
+linear_recipe <- recipe(Y ~ ., data = df_linear)
+
+### Interaction dataset splits
+
+interaction_splits  <- progressive_split(df_interaction, validation_size= 0.2, start_size = 3)
+
+interaction_recipe <- recipe(Y ~ ., data = df_interaction)
+```
+
+The results are organized sequentially, beginning with the Linear Regression, followed by the SVM, the Decision Tree, and finally, the Random Forest. For each model, we examine its performance across the three distinct datasets: random, linear, and interaction. The results are illustrated through learning curves, which graphically depict both the training and validation scores followed by an interpretation of the findings.
+
+## Linear Regression Model
+
+### Linear Regression Model in Random Dataset
+
+```{r linear-wf-random}
+
+wf_lm_random <- workflow() %>%
+    add_model(linear_spec) %>%
+    add_recipe(random_recipe)
+```
+
+```{r linear-plot-random}
+lm_random <-
+create_plot(wf_lm_random, random_splits)
+save_plots("lm-random")
+
+```
+
+![](`r here("R","img", "lm-random.png")`)
+
+Initially, when trained on a very small subset, the model exhibits a high training score. As the training size subset progresses, the model's training score declines. This descent implies that with an increasing number of cases, the model consistently recognizes the absence of a substantive relationship within the data, evidenced by the convergent performance of both the training and validation scores near zero. The training error is consistently low after using around 50 observations in the training set. This suggests that the model is not overfitting to the training data, as the training score is not significantly higher than the validation score.
+
+### Linear Regression Model in Linear Dataset
+
+```{r linear-wf-linear}
+
+wf_lm_linear <- workflow() %>%
+    add_model(linear_spec) %>%
+    add_recipe(linear_recipe)
+
+```
+
+```{r linear-plot-linear}
+lm_linear <-
+create_plot(wf_lm_linear, linear_splits)
+save_plots("lm-linear")
+```
+
+![](`r here("R","img", "lm-linear.png")`)
+
+In this case, as the training set size increases, the score for the training data decreases. However, unlike the results from the random dataset, the validation score improves as the training set size increases, reflecting the model's growing capability to predict unseen data. Eventually, both the training and validation scores converge indicating that the model has learned the underlying linear relationship whiting the data. The minimal gap between the training and validation scores suggests that the model has learned the data pattern around 180 observations.
+
+### Linear Regression Model in Interaction Dataset
+
+```{r linear-wf-interaction}
+
+wf_lm_interaction <- workflow() %>%
+    add_model(linear_spec) %>%
+    add_recipe(interaction_recipe)
+
+```
+
+```{r linear-plot-interaction}
+lm_interaction <-
+create_plot(wf_lm_interaction, interaction_splits)
+
+save_plots("lm-interaction")
+```
+
+![](`r here("R","img", "lm-interaction.png")`)
+
+In the final learning curve, we observe the model's performance on a dataset that includes two interaction terms, yet the model applied remains a linear regression without interaction terms included. Initially, with a minimal training set, the model's score is high, similar to previous simulations. As more data is added, the training score gradually decreases, reflecting the model's struggle to capture the complexity of the data due to the missing interaction terms. The model's inability to incorporate these terms is evident in the persistent low score of the validation set, which scarcely improves regardless of the training set size. This divergence between training and validation scores, with the validation score remaining near zero, suggests that the model's specification is inadequate for the dataset's structure (high bias) and it barely benefits from the additional data.
+
+## SVM Model
+
+### SVM Model in Random Dataset
+```{r svm-wf-random}
+
+random_recipe <- recipe(Y ~ ., data = df_random)
+
+wf_random_svm <- workflow() %>%
+    add_model(svm_spec) %>%
+    add_recipe(random_recipe)  
+
+```
+
+```{r svm-plot-random}
+svm_random <-
+create_plot(wf_random_svm, random_splits)
+save_plots("svm-random")
+
+```
+
+![](`r here("R","img", "svm-random.png")`)
+
+The learning curve for the SVM model with a quadratic kernel applied to a random dataset illustrates an initial high training score, which declines as the training set size increases. The validation score remains consistently low throughout. This consistency of low performance between the training and validation scores is due to the dataset's underlying structure. Therefore, the SVM with a polynomial kernel demonstrates similar behavior to the linear regression model when applied to random data, confirming the dataset's lack of structure.
+
+### SVM in Linear Dataset
+
+```{r svm-wf-linear}
+
+wf_svm_linear <- workflow() %>%
+    add_model(svm_spec) %>%
+    add_recipe(linear_recipe)  
+
+```
+
+```{r svm-plot-linear}
+svm_linear <-
+create_plot(wf_svm_linear, linear_splits)
+
+save_plots("svm-linear")
+```
+
+![](`r here("R","img", "svm-linear.png")`)
+
+When applied to the linear relationship dataset, the model achieves an R2 score of around 0.25 at around 240 observations in the training set. Its progression toward this level of validation error is lower than the linear regression. The training score depicts a steady decline as the size of the training set increases, an indication that the model is slowly adjusting to the linear pattern within the data. This suggests that while the model does learn the linear relationship eventually, it requires more information in the training data compared to a linear model.
+
+### SVM in Interaction Dataset
+
+```{r svm-wf-interaction}
+
+wf_svm_interaction <- workflow() %>%
+    add_model(svm_spec) %>%
+    add_recipe(interaction_recipe)  
+
+```
+
+```{r svm-plot-interaction}
+svm_interaction <-
+create_plot(wf_svm_interaction, interaction_splits)
+save_plots("svm-interaction")
+```
+
+![](`r here("R","img", "svm-interaction.png")`)
+
+The SVM model shows a clear distinction when it is applied to a dataset with interaction terms. Before reaching the 80 observations, the validation score varies significantly, indicating the model's initial challenge in capturing the data's interaction effects consistently. After surpassing this threshold, the validation score begins to mirror the training score, reflecting the SVM's increasing effectiveness at learning the structures resulting from the interaction terms.
+
+## Decision Tree Model
+
+### Decision Tree in Random Dataset
+
+```{r tree-wf-random}
+
+wf_tree_random <- workflow() %>%
+    add_model(tree_spec) %>%
+    add_recipe(random_recipe)
+
+```
+
+```{r tree-plot-random}
+tree_random <-
+create_plot(wf_tree_random, random_splits)
+
+save_plots("tree-random")
+```
+
+![](`r here("R","img", "tree-random.png")`)
+
+The learning curve for the decision tree model trained on random data is characterized by a high variance in the training score, which is indicative of the model's sensitivity to the specific splits it makes while learning from the dataset. The training score goes high quickly, reflecting the tree's capacity to fit the training data well even when there is not a true pattern in the data frame. However, as the training size increases, the training score fluctuates significantly and generally shows a declining trend. The validation score remains consistently near zero across different training set sizes. 
+
+### Decision Tree in Linear Dataset
+
+```{r tree-wf-linear}
+
+wf_tree_linear <- workflow() %>%
+    add_model(tree_spec) %>%
+    add_recipe(linear_recipe)
+
+```
+
+```{r tree-plot-linear}
+tree_linear <-
+create_plot(wf_tree_linear, linear_splits)
+save_plots("tree-linear")
+```
+
+![](`r here("R","img", "tree-linear.png")`)
+
+As the size of the training set grows, the training score begins to stabilize, but it does not reach a high peak, which would be expected if the model captured the underlying linear relationship effectively. The validation score remains significantly lower than the training score throughout and shows little improvement with the addition of more training data, which could be indicative of the model's limited capacity to generalize the linear relationship in the validation set. The persistent gap between the training and validation scores implies that while the decision tree can learn from the training data, it does not generalize well to new, unseen data.
+
+### Decision Tree in Interaction Dataset
+
+```{r tree-wf-interaction}
+wf_tree_interaction <- workflow() %>%
+    add_model(tree_spec) %>%
+    add_recipe(interaction_recipe)
+
+```
+
+```{r tree-plot-interaction}
+tree_interaction <-
+create_plot(wf_tree_interaction, interaction_splits)
+
+save_plots("tree-interaction")
+```
+
+![](`r here("R","img", "tree-interaction.png")`)
+
+In this learning curve, we see a significant difference compared to the previous graph. The training score starts low, then improves and later remains stable as the training set size increases, indicating the decision tree's ability to fit complex patterns in the data. However, the validation score, while showing some improvement over time, remains at a level below the training score, suggesting that the model's capacity to generalize the learned interactions to unseen data is limited. This persistent gap between training and validation performance highlights the decision tree's tendency to overfit the training data, especially in the presence of complex interactions.
+
+## Random Forest Model
+
+### Random Forest in Random Dataset
+
+```{r forest-wf-random}
+
+wf_random_forest <- workflow() %>%
+    add_model(forest_spec) %>%
+    add_recipe(random_recipe)
+
+```
+
+```{r forest-plot-random}
+forest_random <-
+create_plot(wf_random_forest, random_splits)
+save_plots("forest-random")
+```
+
+![](`r here("R","img", "forest-random.png")`)
+
+The Random Forest model applied to a randomly generated dataset shows a training score that starts high and remains stable across the different training set sizes. However, the validation score is consistently low and flat, near zero, which is expected since the data is random and lacks any underlying pattern. This discrepancy between the training and validation scores, with the validation score persistently near zero, implies that while the Random Forest can model the training data, it cannot extract any predictive insights due to the random nature of the dataset.
+
+### Random Forest in Linear Dataset
+
+```{r forest-wf-linear} 
+
+wf_linear_forest <- workflow() %>%
+    add_model(forest_spec) %>%
+    add_recipe(linear_recipe)
+
+```
+
+```{r forest-plot-linear}
+forest_linear <-
+create_plot(wf_linear_forest, linear_splits)
+
+save_plots("forest-linear")
+
+```
+
+![](`r here("R","img", "forest-linear.png")`)
+
+Results show a stable high training score and a lower but slightly increasing validation score as more data is introduced. The validation score's modest upward trend suggests that the model is beginning to generalize the linear relationship to some extent, but the considerable gap between the training and validation scores indicates that the Random Forest may not be fully capturing the linear nature of the data. Also, it achieves the highest validation score at around 200 observations, which is lower than the linear regression model.
+
+### Random Forest in Interaction Dataset
+
+```{r forest-wf-interaction} 
+
+wf_interaction_forest <- workflow() %>%
+    add_model(forest_spec) %>%
+    add_recipe(interaction_recipe)
+
+```
+
+```{r forest-plot-interaction}
+forest_interaction <-
+create_plot(wf_interaction_forest, interaction_splits)
+
+save_plots("forest-interaction")
+```
+
+![](`r here("R","img", "forest-interaction.png")`)
+
+The Random Forest model applied to a dataset with interaction terms shows a substantial improvement in the validation score as the training set size increases, indicating the model's effectiveness in capturing more complex relationships. The validation score present a rapid growth after 50 observation, and then, after 250 observations. However, this model reached an approx R2 of .6, while the SVM model reached a value of 0.75.
+
+```{r}
+library(patchwork)
+
+lm_random + lm_linear + lm_interaction + svm_random + svm_linear + svm_interaction + tree_random + tree_linear + tree_interaction + forest_random + forest_linear + forest_interaction + plot_layout(ncol = 3)
+
+ggsave(here("R", "img", "all_models.png"), 
+       width = 10, height = 13, units = "in",
+        dpi = 300)
+
+```
+
+
+# Conclusions
+
+Our study reveals that all models consistently underperformed when applied to the random dataset, which is to be expected given the absence of patterns for the models to learn and generalize from. The overfitting observed at smaller training sizes and the lack of improvement in validation scores, underscores the inherent randomness of the dataset.
+
+In datasets characterized by a linear relationship, linear regression, SVM, and Random Forest models were effective, each achieving an R2 score of around 0.25. Notably, linear regression achieved the quickest and highest validation score. Conversely, the decision tree model's performance on the linear dataset implies that less complex models may yield better results in such scenarios.
+
+Datasets with interaction terms posed a greater challenge due to the absence of explicit information about the interactions in the model specifications. Nonetheless, SVM and Random Forest models were able to capture interactions. Despite its ability to model non-linear patterns, the decision tree exhibited considerable variability in its validation performance.
+
+The analysis emphasizes the crucial role of model selection in alignment with the data's intrinsic structure, which often remains empirically obscure to researchers. The choice of model directly influences the required sample size to achieve optimal performance. Models that are poorly specified will display suboptimal validation scores, a deficiency that larger sample sizes cannot rectify easily at least in the scenarios presented in the study. Conversely, models with appropriate specifications stand to gain from an increase in sample size, although the extent of this gain varies. It is contingent upon the model's complexity and its capacity to utilize the available data effectively.
+
+In conclusion, our findings stress the vital importance of aligning sample size with the model and data complexity. They further illustrate that while an increase in data typically enhances model performance, the marginal gains diminish once the model has reached its learning capacity from the data provided.
+
+### Limitations
+
+This study has several limitations related to the selection of algorithms, model specifications, dataset characteristics, preprocessing methods, and other factors.
+
+Model Specificity: Our analysis was limited to a select number of algorithms, and there's a vast landscape of alternative models and hyperparameters that could potentially yield superior results. It is standard practice in machine learning to fine-tune parameters specifically to the dataset at hand, a step that was not undertaken in this study. Consequently, the reported performance of models like decision trees or SVM may not extend to models with other configurations. For instance, the efficacy of the Random Forest could vary with adjustments to the number of trees or the depth of individual trees, tailored to either linear or interaction datasets.
+
+Dataset Diversity: The datasets utilized were specifically random, linear, and with interaction terms, which do not encompass the full complexity often encountered in real-world data. This complexity may include non-linear relationships, high dimensionality, and the presence of noise variables which could differentially impact model performance. Additionally, the predictors in our design were generated independently, a scenario that did not reflect the correlated nature of real-world data.
+
+Evaluation Metrics: The sole reliance on the R2 score as a measure of performance is another limitation. Incorporating other metrics such as Mean Squared Error or Mean Absolute Error could provide a more nuanced understanding of model performance and might be more appropriate depending on the specific application domain.
+
+Feature Engineering: The study did not employ feature engineering, which can markedly influence model performance, especially in models where capturing interaction effects is crucial. Although manipulating predictors to engineer new features is a standard machine learning strategy, this approach was not explored in our analysis.
+
+Measurement Error: In this study, the synthetic datasets incorporated random measurement errors to simulate real-world conditions. However, practical applications often encounter a broader spectrum of data quality issues, including measurement errors, missing data, and coding inconsistencies. These issues can significantly impact the accuracy and reliability of the measurements, and by extension, the performance of the models. This study's approach to measurement error does not fully capture the complex and multifaceted nature of data quality challenges present in real-world datasets
+
+Statistical analysis: The study does not include a statistical analysis to compare the efficacy of different models systematically. We used visualizations for interpretative assessment, which may not capture the statistical nuances that a formal comparative analysis would provide.
+
+These limitations suggest caution in generalizing the study's findings. A more comprehensive approach involving a variety of datasets, parameter tuning, advanced feature engineering, consideration of measurement error, and rigorous statistical testing would be needed to validate and extend the conclusions drawn from this research.
+
+## References
+
+## Apendix 
+
+### Plots all models
+
+![](`r here("R","img", "all_models.png")`)
+
+
+### Plots linear dataset 
+```{r}
+
+# Create a list of plots, one for each predictor
+plots <- map(names(df_linear)[-1], ~{
+    ggplot(df_linear, aes_string(.x, "Y")) +
+        geom_point() +
+        geom_smooth(se = FALSE, color = "red") +
+        labs(x = .x, y = "Y", title = paste("Y vs", .x))
+})
+
+# Print the plots
+walk(plots, print)
+```
+
+### Plots interaction dataset
+
+```{r}
+# Create a list of plots, one for each predictor and interaction
+plots <- map(names(df_interaction)[-1], ~{
+    ggplot(df_interaction, aes_string(.x, "Y")) +
+        geom_point() +
+        geom_smooth(se = FALSE, color = "red") +
+        labs(x = .x, y = "Y", title = paste("y vs", .x))
+})
+
+# Print the plots
+walk(plots, print)
+```
+
+### Plots random dataset
+
+```{r}
+# Create a list of plots, one for each predictor
+plots <- map(names(df_random)[-1], ~{
+    ggplot(df_random, aes_string(.x, "Y")) +
+        geom_point() +
+        geom_smooth(se = FALSE, color = "red") +
+        labs(x = .x, y = "y", title = paste("y vs", .x))
+})
+
+# Print the plots
+walk(plots, print)
+
+```
+

@@ -1,0 +1,32 @@
+{
+    "id": "197FFF9E",
+    "path": "~/Dropbox/PROJECTS/CURRENT/WHY-ML/ML_public_health.qmd",
+    "project_path": "ML_public_health.qmd",
+    "type": "quarto_markdown",
+    "hash": "28328486",
+    "contents": "",
+    "dirty": false,
+    "created": 1721768237973.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "chunk_output_type": "console",
+        "docOutlineVisible": "1",
+        "cursorPosition": "97,0",
+        "scrollLine": "81",
+        "rmdVisualModeLocation": "2:0",
+        "rmdVisualCollapsedChunks": ""
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1721791409,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1721791409,
+    "read_only": false,
+    "read_only_alternatives": []
+}
