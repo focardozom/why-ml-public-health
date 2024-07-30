@@ -1,6 +1,6 @@
 library(shiny)
 library(glmnet)
-library(ggplot2)
+library(gridExtra)
 
 # Define UI for application
 ui <- fluidPage(
@@ -30,7 +30,7 @@ server <- function(input, output) {
         x <- matrix(rnorm(200), ncol = 2)
         y <- 3 * x[,1] + 2 * x[,2] + rnorm(100)
         
-        # Fit model with Lasso penalty (alpha = 1) using the first column of x
+        # Fit model with Lasso penalty (alpha = 1) using both columns of x
         fit <- glmnet(x, y, alpha = 1, lambda = input$penalty)
         
         # Extract coefficients
@@ -38,28 +38,26 @@ server <- function(input, output) {
         slope1 <- coef(fit)[2]
         slope2 <- coef(fit)[3]
         
-        # Calculate predicted values using intercept and slope of the first predictor
+        # Calculate predicted values using intercept and slopes
         y_pred <- intercept + x[,1] * slope1 + x[,2] * slope2
         
         # Combine data for plotting
-        data <- data.frame(X1 = x[,1], X2 = x[,2], Y = y, Y_Pred = as.vector(y_pred))
+        data <- data.frame(X1 = x[,1], Y = y, Y_Pred = y_pred)
         
-        # Plot with ggplot2
-        p1 <- ggplot(data, aes(x = X1, y = Y)) +
-              geom_point() +
-              geom_abline(intercept = intercept, slope = slope1, color = "blue") +
-              labs(title = "Lasso Regression Line (X1 vs Y)",
-                   x = "X1",
-                   y = "Y")
+        # Plot data and regression line
+        par(mfrow = c(1, 2))
         
-        p2 <- ggplot(data, aes(x = X1, y = Y)) +
-              geom_point(color = "red") +
-              geom_point(aes(y = Y_Pred), color = "blue") +
-              labs(title = "Actual vs Predicted (X1 vs Y)",
-                   x = "X1",
-                   y = "Y")
+        # Plot 1: Regression line
+        plot(data$X1, data$Y, main = "Lasso Regression Line (X1 vs Y)",
+             xlab = "X1", ylab = "Y", pch = 19, col = "red")
+        abline(intercept, slope1, col = "blue", lwd = 2)
         
-        grid.arrange(p1, p2, ncol = 2)
+        # Plot 2: Actual vs Predicted values
+        plot(data$X1, data$Y, main = "Actual vs Predicted (X1 vs Y)",
+             xlab = "X1", ylab = "Y", pch = 19, col = "red")
+        points(data$X1, data$Y_Pred, col = "blue", pch = 19)
+        
+        par(mfrow = c(1, 1))
     })
     
     output$modelSummary <- renderPrint({
