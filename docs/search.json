@@ -1,224 +1,224 @@
 [
   {
-    "objectID": "ML_HEALTH.html#agenda",
-    "href": "ML_HEALTH.html#agenda",
+    "objectID": "ML_public_health.html#agenda",
+    "href": "ML_public_health.html#agenda",
     "title": "Machine Learning for Public Health",
     "section": "Agenda",
     "text": "Agenda\n\n\nPart I - Machine Learning\n\nKey Concepts\nSimulation Examples\n\n\nPart II - Generative AI\n\nKey Concepts\nTools\nFuture Directions\nEthical Dilemmas"
   },
   {
-    "objectID": "ML_HEALTH.html#what-is-public-health",
-    "href": "ML_HEALTH.html#what-is-public-health",
+    "objectID": "ML_public_health.html#what-is-public-health",
+    "href": "ML_public_health.html#what-is-public-health",
     "title": "Machine Learning for Public Health",
     "section": "What is Public Health?",
     "text": "What is Public Health?\n\n\n“Public health is the art and science of preventing disease, prolonging life, and promoting health through the organized efforts of society” - (Winslow 1920)\n\n\n“Public health is primarily concerned with the health of the entire population, rather than the health of individuals. Its features include an emphasis on the promotion of health and the prevention of disease and disability; the collection and use of epidemiological data, population surveillance, and other forms of empirical quantitative assessment; a recognition of the multidimensional nature of the determinants of health; and a focus on the complex interactions of many factors - biological, behavioral, social, and environmental - in developing effective interventions.” - (Childress et al. 2002)\n\nScoping review of definitions (Azari and Borisch 2023)"
   },
   {
-    "objectID": "ML_HEALTH.html#the-importance-of-prediction-in-public-health",
-    "href": "ML_HEALTH.html#the-importance-of-prediction-in-public-health",
+    "objectID": "ML_public_health.html#the-importance-of-prediction-in-public-health",
+    "href": "ML_public_health.html#the-importance-of-prediction-in-public-health",
     "title": "Machine Learning for Public Health",
     "section": "The Importance of Prediction in Public Health",
     "text": "The Importance of Prediction in Public Health\n\n\nWhat are the underlying causes of a health problem? For example, what are the causes of youth alcohol initiation?\nWhat are the risk factors associated with a health problem? Which demographic and behavioral factors increase the likelihood of developing type 2 diabetes among adults?\n\n\n\nCan we predict the future appearance of a health problem? Can we forecast the potential outbreak of seasonal influenza in the upcoming months?"
   },
   {
-    "objectID": "ML_HEALTH.html#machine-learning-is-good-for-prediction",
-    "href": "ML_HEALTH.html#machine-learning-is-good-for-prediction",
+    "objectID": "ML_public_health.html#machine-learning-is-good-for-prediction",
+    "href": "ML_public_health.html#machine-learning-is-good-for-prediction",
     "title": "Machine Learning for Public Health",
     "section": "Machine Learning is Good for Prediction",
     "text": "Machine Learning is Good for Prediction\n\n\nTraditional Statistics\n\nFocus on inference rather than prediction\nLimited flexibility with complex, non-linear relationships\nEmphasis on hypothesis testing and confidence intervals\nDesigned for smaller data sets\n\n\nMachine Learning\n\nPrioritizes predictive accuracy over interpretability\nHandles complex, non-linear relationships\nUses performance metrics (e.g., accuracy, AUC, F1 score)\nSpecialized techniques for unstructured data (e.g., NLP, CNNs)"
   },
   {
-    "objectID": "ML_HEALTH.html#machine-learning-the-best-tool-for-prediction",
-    "href": "ML_HEALTH.html#machine-learning-the-best-tool-for-prediction",
+    "objectID": "ML_public_health.html#machine-learning-the-best-tool-for-prediction",
+    "href": "ML_public_health.html#machine-learning-the-best-tool-for-prediction",
     "title": "Machine Learning for Public Health",
     "section": "Machine Learning: The Best Tool for Prediction",
     "text": "Machine Learning: The Best Tool for Prediction\nI suggest these three concepts are at the heart of effective prediction:\n\nTesting error\nRegularization\nBias-variance trade-off\n\nBonus: Machine learning is optimized for prediction."
   },
   {
-    "objectID": "ML_HEALTH.html#testing-error",
-    "href": "ML_HEALTH.html#testing-error",
+    "objectID": "ML_public_health.html#testing-error",
+    "href": "ML_public_health.html#testing-error",
     "title": "Machine Learning for Public Health",
     "section": "Testing Error",
     "text": "Testing Error\n\nMeasures the performance of a model on unseen data.\nHelps to evaluate the generalization ability of a model.\nThe estimation of this error is key to optimizing model performance."
   },
   {
-    "objectID": "ML_HEALTH.html#regularization",
-    "href": "ML_HEALTH.html#regularization",
+    "objectID": "ML_public_health.html#regularization",
+    "href": "ML_public_health.html#regularization",
     "title": "Machine Learning for Public Health",
     "section": "Regularization",
     "text": "Regularization\n\nTechnique to prevent overfitting.\nControls the complexity of the model.\nAdds some bias to the model to reduce variance."
   },
   {
-    "objectID": "ML_HEALTH.html#live-example",
-    "href": "ML_HEALTH.html#live-example",
+    "objectID": "ML_public_health.html#live-example",
+    "href": "ML_public_health.html#live-example",
     "title": "Machine Learning for Public Health",
     "section": "Live Example",
     "text": "Live Example\n#| standalone: true\n#| viewerHeight: 500\nlibrary(shiny)\nlibrary(glmnet)\n\n# Define UI for application\nui &lt;- fluidPage(\n    titlePanel(\"Effect of L1 Penalty (Lasso) on Regression Slope\"),\n    sidebarLayout(\n        sidebarPanel(\n            sliderInput(\"penalty\",\n                        \"Penalty (Lambda):\",\n                        min = 0,\n                        max = 1,\n                        value = 0.1,\n                        step = 0.01)\n        ),\n        mainPanel(\n           plotOutput(\"regressionPlot\"),\n           verbatimTextOutput(\"modelSummary\")\n        )\n    )\n)\n\n# Define server logic\nserver &lt;- function(input, output) {\n    \n    output$regressionPlot &lt;- renderPlot({\n        # Generate synthetic data\n        set.seed(123)\n        x &lt;- matrix(rnorm(200), ncol = 2)\n        y &lt;- 3 * x[,1] + 2 * x[,2] + rnorm(100)\n        \n        # Fit model with Lasso penalty (alpha = 1) using both columns of x\n        fit &lt;- glmnet(x, y, alpha = 1, lambda = input$penalty)\n        \n        # Extract coefficients\n        intercept &lt;- coef(fit)[1]\n        slope1 &lt;- coef(fit)[2]\n        slope2 &lt;- coef(fit)[3]\n        \n        # Calculate predicted values using intercept and slopes\n        y_pred &lt;- intercept + x[,1] * slope1 + x[,2] * slope2\n        \n        # Combine data for plotting\n        data &lt;- data.frame(X1 = x[,1], Y = y, Y_Pred = y_pred)\n        \n        # Plot data and regression line\n        par(mfrow = c(1, 2))\n        \n        # Plot 1: Regression line\n        plot(data$X1, data$Y, main = \"Lasso Regression Line (X1 vs Y)\",\n             xlab = \"X1\", ylab = \"Y\", pch = 19, col = \"red\")\n        abline(intercept, slope1, col = \"blue\", lwd = 2)\n        \n        # Plot 2: Actual vs Predicted values\n        plot(data$X1, data$Y, main = \"Actual vs Predicted (X1 vs Y)\",\n             xlab = \"X1\", ylab = \"Y\", pch = 19, col = \"red\")\n        points(data$X1, data$Y_Pred, col = \"blue\", pch = 19)\n        \n        par(mfrow = c(1, 1))\n    })\n    \n    output$modelSummary &lt;- renderPrint({\n        # Generate synthetic data\n        set.seed(123)\n        x &lt;- matrix(rnorm(200), ncol = 2)\n        y &lt;- 3 * x[,1] + 2 * x[,2] + rnorm(100)\n        \n        # Fit model with Lasso penalty (alpha = 1)\n        fit &lt;- glmnet(x, y, alpha = 1, lambda = input$penalty)\n        \n        # Display coefficients including intercept\n        intercept &lt;- coef(fit)[1]\n        slope1 &lt;- coef(fit)[2]\n        slope2 &lt;- coef(fit)[3]\n        \n        cat(\"Intercept:\", intercept, \"\\n\")\n        cat(\"Slope for X1:\", slope1, \"\\n\")\n        cat(\"Slope for X2:\", slope2, \"\\n\")\n    })\n}\n\n# Run the application \nshinyApp(ui = ui, server = server)"
   },
   {
-    "objectID": "ML_HEALTH.html#bias-variance-trade-off",
-    "href": "ML_HEALTH.html#bias-variance-trade-off",
+    "objectID": "ML_public_health.html#bias-variance-trade-off",
+    "href": "ML_public_health.html#bias-variance-trade-off",
     "title": "Machine Learning for Public Health",
     "section": "Bias-variance Trade-off",
     "text": "Bias-variance Trade-off\nBias: Error due to overly simplistic assumptions. Variance: Error due to overly complex models. The goal is to minimize the total error."
   },
   {
-    "objectID": "ML_HEALTH.html#simulation-example",
-    "href": "ML_HEALTH.html#simulation-example",
+    "objectID": "ML_public_health.html#simulation-example",
+    "href": "ML_public_health.html#simulation-example",
     "title": "Machine Learning for Public Health",
     "section": "Simulation Example",
     "text": "Simulation Example\nLet’s simulate a data set and apply machine learning techniques to predict the outcome.\n\nSimulate two data sets:\n\nLinear relationship\nNon-linear relationship\n\nFit a linear regression model to the linear data set.\nFit a linear regression model to the non-linear data set.\nFit a support vector machine model to the non-linear data set.\nFit a random forest model to the linear data set."
   },
   {
-    "objectID": "ML_HEALTH.html#simulation-example-1",
-    "href": "ML_HEALTH.html#simulation-example-1",
+    "objectID": "ML_public_health.html#simulation-example-1",
+    "href": "ML_public_health.html#simulation-example-1",
     "title": "Machine Learning for Public Health",
     "section": "Simulation Example",
     "text": "Simulation Example\nEstimate these models in a few cases. Then progressively increase the sample size by one unit. Calculate the training and testing errors each time."
   },
   {
-    "objectID": "ML_HEALTH.html#first-scenario",
-    "href": "ML_HEALTH.html#first-scenario",
+    "objectID": "ML_public_health.html#first-scenario",
+    "href": "ML_public_health.html#first-scenario",
     "title": "Machine Learning for Public Health",
     "section": "First Scenario",
     "text": "First Scenario\nA linear problem - linear regression."
   },
   {
-    "objectID": "ML_HEALTH.html#second-scenario",
-    "href": "ML_HEALTH.html#second-scenario",
+    "objectID": "ML_public_health.html#second-scenario",
+    "href": "ML_public_health.html#second-scenario",
     "title": "Machine Learning for Public Health",
     "section": "Second Scenario",
     "text": "Second Scenario\nNon-linear problem - linear regression."
   },
   {
-    "objectID": "ML_HEALTH.html#third-scenario",
-    "href": "ML_HEALTH.html#third-scenario",
+    "objectID": "ML_public_health.html#third-scenario",
+    "href": "ML_public_health.html#third-scenario",
     "title": "Machine Learning for Public Health",
     "section": "Third Scenario",
     "text": "Third Scenario\nNon-linear problem - Support Vector Machine."
   },
   {
-    "objectID": "ML_HEALTH.html#fourth-scenario",
-    "href": "ML_HEALTH.html#fourth-scenario",
+    "objectID": "ML_public_health.html#fourth-scenario",
+    "href": "ML_public_health.html#fourth-scenario",
     "title": "Machine Learning for Public Health",
     "section": "Fourth Scenario",
     "text": "Fourth Scenario\nA linear problem - Random Forest."
   },
   {
-    "objectID": "ML_HEALTH.html#machine-learning-in-public-health",
-    "href": "ML_HEALTH.html#machine-learning-in-public-health",
+    "objectID": "ML_public_health.html#machine-learning-in-public-health",
+    "href": "ML_public_health.html#machine-learning-in-public-health",
     "title": "Machine Learning for Public Health",
     "section": "Machine Learning in Public Health",
     "text": "Machine Learning in Public Health\n\nMachine learning is a powerful tool for prediction in public health.\nIt prioritizes predictive accuracy over interpretability.\nIt handles complex, non-linear relationships.\nIt is optimized for prediction."
   },
   {
-    "objectID": "ML_HEALTH.html#key-concepts",
-    "href": "ML_HEALTH.html#key-concepts",
+    "objectID": "ML_public_health.html#key-concepts",
+    "href": "ML_public_health.html#key-concepts",
     "title": "Machine Learning for Public Health",
     "section": "Key Concepts",
     "text": "Key Concepts\n\nTesting error: Measures the performance of a model on unseen data.\nRegularization: Technique to prevent overfitting.\nBias-variance trade-off: The goal is to minimize the total error."
   },
   {
-    "objectID": "ML_HEALTH.html#transformers",
-    "href": "ML_HEALTH.html#transformers",
+    "objectID": "ML_public_health.html#transformers",
+    "href": "ML_public_health.html#transformers",
     "title": "Machine Learning for Public Health",
     "section": "Transformers",
     "text": "Transformers"
   },
   {
-    "objectID": "ML_HEALTH.html#what-is-a-transformer",
-    "href": "ML_HEALTH.html#what-is-a-transformer",
+    "objectID": "ML_public_health.html#what-is-a-transformer",
+    "href": "ML_public_health.html#what-is-a-transformer",
     "title": "Machine Learning for Public Health",
     "section": "What is a Transformer?",
     "text": "What is a Transformer?\n\nTransformers are a type of neural network architecture that has been used to achieve state-of-the-art performance on a wide range of natural language processing tasks.\nThey are based on the self-attention mechanism, which allows the model to focus on different parts of the input sequence when making predictions.\nTransformers have been used to build large language models that can generate human-like text, translate between languages, and perform other natural language processing tasks."
   },
   {
-    "objectID": "ML_HEALTH.html#transformers-applications",
-    "href": "ML_HEALTH.html#transformers-applications",
+    "objectID": "ML_public_health.html#transformers-applications",
+    "href": "ML_public_health.html#transformers-applications",
     "title": "Machine Learning for Public Health",
     "section": "Transformers Applications",
     "text": "Transformers Applications\n\nAudio transcription, image captioning, text-to-speech, speech-to-text, translation, text generation, sentiment analysis, summarization, question answering, chatbots, virtual assistants, customer service, content creation, content moderation."
   },
   {
-    "objectID": "ML_HEALTH.html#audio",
-    "href": "ML_HEALTH.html#audio",
+    "objectID": "ML_public_health.html#audio",
+    "href": "ML_public_health.html#audio",
     "title": "Machine Learning for Public Health",
     "section": "Audio",
     "text": "Audio\n\nWhisper"
   },
   {
-    "objectID": "ML_HEALTH.html#audio-1",
-    "href": "ML_HEALTH.html#audio-1",
+    "objectID": "ML_public_health.html#audio-1",
+    "href": "ML_public_health.html#audio-1",
     "title": "Machine Learning for Public Health",
     "section": "Audio",
     "text": "Audio\nAudio Tumaco"
   },
   {
-    "objectID": "ML_HEALTH.html#imagen",
-    "href": "ML_HEALTH.html#imagen",
+    "objectID": "ML_public_health.html#imagen",
+    "href": "ML_public_health.html#imagen",
     "title": "Machine Learning for Public Health",
     "section": "Imagen",
     "text": "Imagen\n\nMidjourney\nrecraft.ai"
   },
   {
-    "objectID": "ML_HEALTH.html#what-are-large-language-models",
-    "href": "ML_HEALTH.html#what-are-large-language-models",
+    "objectID": "ML_public_health.html#what-are-large-language-models",
+    "href": "ML_public_health.html#what-are-large-language-models",
     "title": "Machine Learning for Public Health",
     "section": "What are Large Language Models?",
     "text": "What are Large Language Models?\n\nSomething that knows how to predict the next word in a sentence or fill in the missing words in a sentence.\nLarge language models (LLMs) are a type of artificial intelligence that can generate human-like text.\nThey are trained on vast amounts of text data."
   },
   {
-    "objectID": "ML_HEALTH.html#what-can-you-do-with-llms",
-    "href": "ML_HEALTH.html#what-can-you-do-with-llms",
+    "objectID": "ML_public_health.html#what-can-you-do-with-llms",
+    "href": "ML_public_health.html#what-can-you-do-with-llms",
     "title": "Machine Learning for Public Health",
     "section": "What can you do with LLMs?",
     "text": "What can you do with LLMs?\n\nPrompt and RAG the models (López Espejel et al. 2023)"
   },
   {
-    "objectID": "ML_HEALTH.html#prompt-and-rag-the-models",
-    "href": "ML_HEALTH.html#prompt-and-rag-the-models",
+    "objectID": "ML_public_health.html#prompt-and-rag-the-models",
+    "href": "ML_public_health.html#prompt-and-rag-the-models",
     "title": "Machine Learning for Public Health",
     "section": "Prompt and RAG the models",
     "text": "Prompt and RAG the models"
   },
   {
-    "objectID": "ML_HEALTH.html#prompt-and-rag-the-models-1",
-    "href": "ML_HEALTH.html#prompt-and-rag-the-models-1",
+    "objectID": "ML_public_health.html#prompt-and-rag-the-models-1",
+    "href": "ML_public_health.html#prompt-and-rag-the-models-1",
     "title": "Machine Learning for Public Health",
     "section": "Prompt and RAG the models",
     "text": "Prompt and RAG the models"
   },
   {
-    "objectID": "ML_HEALTH.html#prompt-and-rag-the-models-2",
-    "href": "ML_HEALTH.html#prompt-and-rag-the-models-2",
+    "objectID": "ML_public_health.html#prompt-and-rag-the-models-2",
+    "href": "ML_public_health.html#prompt-and-rag-the-models-2",
     "title": "Machine Learning for Public Health",
     "section": "Prompt and RAG the models",
     "text": "Prompt and RAG the models\ngroq\nnat.dev\nh2o"
   },
   {
-    "objectID": "ML_HEALTH.html#what-can-you-do-with-llms-1",
-    "href": "ML_HEALTH.html#what-can-you-do-with-llms-1",
+    "objectID": "ML_public_health.html#what-can-you-do-with-llms-1",
+    "href": "ML_public_health.html#what-can-you-do-with-llms-1",
     "title": "Machine Learning for Public Health",
     "section": "What can you do with LLMs?",
     "text": "What can you do with LLMs?\n\nFine-tune the models\n\nHugging Face Transformers\n\nCreate smaller expert models for narrow tasks"
   },
   {
-    "objectID": "ML_HEALTH.html#learning-from-large-language-models",
-    "href": "ML_HEALTH.html#learning-from-large-language-models",
+    "objectID": "ML_public_health.html#learning-from-large-language-models",
+    "href": "ML_public_health.html#learning-from-large-language-models",
     "title": "Machine Learning for Public Health",
     "section": "Learning from Large Language Models",
     "text": "Learning from Large Language Models\nLeader Board\nAdvance Metric"
   },
   {
-    "objectID": "ML_HEALTH.html#future-directions",
-    "href": "ML_HEALTH.html#future-directions",
+    "objectID": "ML_public_health.html#future-directions",
+    "href": "ML_public_health.html#future-directions",
     "title": "Machine Learning for Public Health",
     "section": "Future Directions",
     "text": "Future Directions\n\nMachine learning in public health is getting bigger.\nMore research is needed to understand the potential of machine learning in public health.\nThe integration of machine learning with traditional statistical approaches is promising.\nWe will have agents that can deliver health information, answer questions, and provide support.\nThe future of public health is bright!"
   },
   {
-    "objectID": "ML_HEALTH.html#ethical-dilemmas",
-    "href": "ML_HEALTH.html#ethical-dilemmas",
+    "objectID": "ML_public_health.html#ethical-dilemmas",
+    "href": "ML_public_health.html#ethical-dilemmas",
     "title": "Machine Learning for Public Health",
     "section": "Ethical Dilemmas",
     "text": "Ethical Dilemmas\n\n\nBias, fairness, security, privacy, transparency, accountability, and trust.\nThe potential for misuse of large language models is a major concern.\nHow people apply moral and ethical principles to the development and use of large language models is a critical issue.\nHow people reason in terms of accountability when interacting with large language models."
